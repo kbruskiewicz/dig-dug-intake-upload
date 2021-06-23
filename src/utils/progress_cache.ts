@@ -25,7 +25,6 @@ export class ProgressCache {
     }
 
     getProgress(token: string) {
-        console.log(token, this.cache)
         // TODO: handle try-catch
         if (this.cache.has_token(token, this.namespace)) {
             let { current_position, end_position } = this.cache.get_token_value(token, this.namespace) as Progress;

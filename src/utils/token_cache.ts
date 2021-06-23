@@ -1,4 +1,4 @@
-interface Tokens {
+export interface Tokens {
     put_token: (name: string, namespace?: string, value?: any, expiry?: number) => object
     has_token: (name: string, namespace?: string) => boolean
     get_token_value: (name: string, namespace?: string) => any
@@ -146,11 +146,11 @@ export class LocalTokenCache extends TokenCache {
 }
 
 // Tests
-const tokenCache = new LocalTokenCache(0);  // 0 => never deletes on expiry
+// const tokenCache = new LocalTokenCache(0);  // 0 => never deletes on expiry
 
-tokenCache.put_token('token', 'namespace', 'value');
-const tokenValue1 = tokenCache.get_token_value('token', 'namespace');
-console.log('has token', tokenValue1, tokenValue1 === 'value' === true);
+// tokenCache.put_token('token', 'namespace', 'value');
+// const tokenValue1 = tokenCache.get_token_value('token', 'namespace');
+// console.log('has token', tokenValue1, tokenValue1 === 'value' === true);
 
 // tokenCache.force_token_expiry(`${'namespace'}${tokenCache.delimiter}${'token'}`);
 // const tokenValue2 = tokenCache.get_token_value('token', 'namespace');
@@ -166,7 +166,7 @@ export class RedisTokenCache extends TokenCache {
         // TODO: Redis client connection
     }
 
-    private queryRedis(query:any ) {
+    private queryRedis(query: any ) {
         return ''
     }
     private writeRedisMap(key: string, value: any) {
@@ -194,6 +194,9 @@ export class RedisTokenCache extends TokenCache {
         return false;
     }
 }
+
+// Tests
+
 
 export default {
     TokenCache,

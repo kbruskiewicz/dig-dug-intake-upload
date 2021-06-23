@@ -45,7 +45,6 @@ const progressCache = new progress.ProgressCache('progress', new cache.LocalToke
 
 app.post('/upload', async (req, res) => {
     let request: any = req;
-    
     const token = auth.obscurePassword(request.files.filename.name);
     googleUploader.upload_file(
         request.files.filename.tempFilePath, 
@@ -59,7 +58,6 @@ app.post('/upload', async (req, res) => {
             console.log(progressCache.getProgress(token))
             return progressCache.getProgress(token);
         });
-
     res.send(200);
 });
 
@@ -69,39 +67,36 @@ app.get('/uploads/progress/:token', async (req, res) => {
 })
 
 app.post('/start_upload/', async (req, res) => {
-
-    let { body: { file, metadata } } = req;
+    let request: any = req; 
+    let { files, body: { file, metadata } } = request;
     let authentication_token = req.header('x-auth');
 
     let authenticated: Boolean;
     // TODO: authenticate with AWT validation here
     // Produce AWT, mimic into cache, check against cache each time if x-auth header exists
     // TODO: find way to get value of x-auth header
-    authenticated = true;
+    authenticated = true;  // use x-auth here
 
     if (authenticated) {
 
-        const token = uuidv4();
+        const token = auth.obscurePassword(files.filename.name);
+        const storageKey = (filename: string, metadata?: object) => `${filename}`; // TODO: make a sensible (configurable?) path out of this
         
-        // extract file path for upload
-        // TODO: function for file_path
-        let getFilePath = (file: any) => '';
-        let file_path = getFilePath(file);
+        // send upload request to self/create upload in second thread (promised)
+        googleUploader.upload_file(
+            files.filename.tempFilePath,          // location of uploadable file on client machine
+            storageKey(files.filename.name),      // name of the file on client machine (replacable?) => TODO: extend into filepath, using metadata
+            // progress event callback => keep track of progress in token store
+            function (progressEvent) {
+                progressCache.setProgress(
+                    token, 
+                    progressEvent.bytesWritten,
+                    files.filename.size
+                )
+                return progressCache.getProgress(token);
+            });
 
-        // generate file path from submitted metadata
-        // TODO: function for file_key
-        let createFileKey = (file_path: string, metadata: object) => '';
-        let file_key = createFileKey(file_path, metadata);
-
-        // send upload request to self/create upload in second thread
-        // ensure that progress callback is
-        let progressCallback = console.log;
-
-        // TODO: find signature for progressCallback
-        // let progressCallback = (progressEvent) => cache.setProgress(token, { ...progressEvent? });
-
-        googleUploader.upload_file(file_path, file_key, progressCallback);
-
+        // sending back the token on successful upload instance will allow client to query token store for progress
         res.send(token);
 
     } else {

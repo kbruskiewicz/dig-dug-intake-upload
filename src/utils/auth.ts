@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import cache from "./token_cache";
 
 const shakeSalt = (
     buffer_size=10
@@ -20,8 +21,6 @@ const validatePassword = (
     password_salt: string, 
     hash_implementation: string='sha512'
 ) => (obscured_password: string) => obscurePassword(given_password, hash_implementation, password_salt) === obscured_password;
-
-// TODO: AWT stuff
 
 export default {
     shakeSalt,
