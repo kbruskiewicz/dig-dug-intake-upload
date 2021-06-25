@@ -43,7 +43,7 @@ app.get('/', async (req: any, res: any) => {
 
 const progressCache = new progress.ProgressCache('progress', new cache.LocalTokenCache(0));
 
-app.post('/upload', async (req, res) => {
+app.post('/upload/', async (req, res) => {
     let request: any = req;
     const token = auth.obscurePassword(request.files.filename.name);
     googleUploader.upload_file(
@@ -61,12 +61,13 @@ app.post('/upload', async (req, res) => {
     res.send(200);
 });
 
-app.get('/uploads/progress/:token', async (req, res) => {
+app.get('/upload/progress/:token', async (req, res) => {
     let prog = progressCache.getProgress(req.params.token);
+    console.log('get progress', prog)
     res.send(prog);
 })
 
-app.post('/start_upload/', async (req, res) => {
+app.post('/upload/start/', async (req, res) => {
     let request: any = req; 
     let { files, body: { file, metadata } } = request;
     let authentication_token = req.header('x-auth');
@@ -88,6 +89,7 @@ app.post('/start_upload/', async (req, res) => {
             storageKey(files.filename.name),      // name of the file on client machine (replacable?) => TODO: extend into filepath, using metadata
             // progress event callback => keep track of progress in token store
             function (progressEvent) {
+                console.log('progress')
                 progressCache.setProgress(
                     token, 
                     progressEvent.bytesWritten,
