@@ -220,22 +220,25 @@ export class RedisTokenCache extends TokenCache {
     }
 }
 
-const client = redis.createClient();
-const redisTokenCache = new RedisTokenCache();
 
-// test redis on basic data
-redisTokenCache.writeRedis('hello', { key: 'value'}).then(console.log);
-redisTokenCache.queryRedis('hello').then(console.log)
+(async function test_async() {
+    const redisTokenCache = new RedisTokenCache();
 
-redisTokenCache.put_token('token', 'namespace', 'value');
-const tokenValue1 = redisTokenCache.get_token_value('token', 'namespace');
-console.log('has token', tokenValue1, tokenValue1 === 'value' === true);
+    // test redis on basic data
+    redisTokenCache.writeRedis('hello', { key: 'value'}).then(console.log);
+    redisTokenCache.queryRedis('hello').then(console.log)
 
-redisTokenCache.force_token_expiry(`${'namespace'}${redisTokenCache.delimiter}${'token'}`);
-const tokenValue2 = redisTokenCache.get_token_value('token', 'namespace');
-console.log('deleted token', tokenValue2, tokenValue2 === 'value' === false);
+    redisTokenCache.put_token('token', 'namespace', 'value');
+    const tokenValue1 = redisTokenCache.get_token_value('token', 'namespace');
+    console.log('has token', tokenValue1, await tokenValue1 === 'value' === true);
 
-setTimeout(() => console.log(redisTokenCache.get_token_value('token', 'namespace')), 20000)
+    redisTokenCache.force_token_expiry(`${'namespace'}${redisTokenCache.delimiter}${'token'}`);
+    const tokenValue2 = redisTokenCache.get_token_value('token', 'namespace');
+    console.log('deleted token', tokenValue2, await tokenValue2 === 'value' === false);
+
+    setTimeout(() => console.log(redisTokenCache.get_token_value('token', 'namespace')), 20000);
+})()
+
 
 export default {
     TokenCache,
