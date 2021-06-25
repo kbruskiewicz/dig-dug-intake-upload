@@ -180,8 +180,10 @@ export class RedisTokenCache extends TokenCache {
         return await getKeyValue(key);
     }
 
-    async writeRedis(key: string, value: any) {
+    // writeRedis taking only values of type `string` means complex data needs to be serialized first
+    async writeRedis(key: string, value: string) {
         const setKeyValuePair = promisify(this.client.set).bind(this.client);
+        console.log(value)
         return await setKeyValuePair(key, value);
     };
 
@@ -225,8 +227,8 @@ export class RedisTokenCache extends TokenCache {
     const redisTokenCache = new RedisTokenCache();
 
     // test redis on basic data
-    redisTokenCache.writeRedis('hello', { key: 'value'}).then(console.log);
-    redisTokenCache.queryRedis('hello').then(console.log)
+    redisTokenCache.writeRedis('hello', JSON.stringify({ key: 'value'})).then(console.log);
+    redisTokenCache.queryRedis('hello').then(JSON.parse).then(console.log);
 
     redisTokenCache.put_token('token', 'namespace', 'value');
     const tokenValue1 = redisTokenCache.get_token_value('token', 'namespace');
@@ -236,7 +238,6 @@ export class RedisTokenCache extends TokenCache {
     const tokenValue2 = redisTokenCache.get_token_value('token', 'namespace');
     console.log('deleted token', tokenValue2, await tokenValue2 === 'value' === false);
 
-    setTimeout(() => console.log(redisTokenCache.get_token_value('token', 'namespace')), 20000);
 })()
 
 
