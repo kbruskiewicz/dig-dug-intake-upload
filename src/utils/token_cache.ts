@@ -177,14 +177,21 @@ export class RedisTokenCache extends TokenCache {
 
     async queryRedis(key: string) {
         const getKeyValue = promisify(this.client.get).bind(this.client);
-        return await getKeyValue(key);
+        // decode
+        // if it's a string it stays a string
+        // if it's an object it decodes as an object
+        // if it's a quoted number it decodes as a number
+        return JSON.parse(await getKeyValue(key));
     }
 
-    // writeRedis taking only values of type `string` means complex data needs to be serialized first
-    async writeRedis(key: string, value: string) {
+    async writeRedis(key: string, value: any) {
         const setKeyValuePair = promisify(this.client.set).bind(this.client);
-        console.log(value)
-        return await setKeyValuePair(key, value);
+        // serialize
+        // if it's a string it stays a string
+        // if it's an object it decodes as an object
+        // if it's a quoted number it decodes as a number
+        const serializedValue = JSON.stringify(value);
+        return await setKeyValuePair(key, serializedValue);
     };
 
     private async hasKey(key: string) {
@@ -194,6 +201,7 @@ export class RedisTokenCache extends TokenCache {
 
     private async deleteRedis(key: string) {
         const del = promisify(this.client.del).bind(this.client);
+        // becomes null
         return await del(key);
     };
 
@@ -202,10 +210,8 @@ export class RedisTokenCache extends TokenCache {
     }
 
     put_token(name: string, namespace?: string, value: any = '', expiry: number = this.expiry) {
-        // TODO: Try/Catch
         const tokenKey = this.tokenKey(name, namespace);  // tokenKey handles the the condition of whether or not there is a namespace
-        const serializedValue = JSON.stringify(value);
-        this.writeRedis(tokenKey, serializedValue);
+        this.writeRedis(tokenKey, value);
         return {
             token: tokenKey,
             expiry
@@ -213,7 +219,7 @@ export class RedisTokenCache extends TokenCache {
     }
 
     async get_token_value(name: string, namespace?: string) {
-        return JSON.parse(await this.queryRedis(this.tokenKey(name, namespace)));
+        return await this.queryRedis(this.tokenKey(name, namespace));
     }
 
     force_token_expiry(token: string) {
@@ -227,16 +233,18 @@ export class RedisTokenCache extends TokenCache {
     const redisTokenCache = new RedisTokenCache();
 
     // test redis on basic data
-    redisTokenCache.writeRedis('hello', JSON.stringify({ key: 'value'})).then(console.log);
-    redisTokenCache.queryRedis('hello').then(JSON.parse).then(console.log);
+    // encode/decode a complex object
+    const valueObj = { key: 'value'};
+    redisTokenCache.writeRedis('hello', valueObj).then(console.log);
+    redisTokenCache.queryRedis('hello').then(console.log);
 
-    redisTokenCache.put_token('token', 'namespace', 'value');
+    redisTokenCache.put_token('token', 'namespace', valueObj);
     const tokenValue1 = redisTokenCache.get_token_value('token', 'namespace');
-    console.log('has token', tokenValue1, await tokenValue1 === 'value' === true);
+    console.log('has token', tokenValue1, JSON.stringify(await tokenValue1) === JSON.stringify(valueObj) === true);
 
     redisTokenCache.force_token_expiry(`${'namespace'}${redisTokenCache.delimiter}${'token'}`);
     const tokenValue2 = redisTokenCache.get_token_value('token', 'namespace');
-    console.log('deleted token', tokenValue2, await tokenValue2 === 'value' === false);
+    console.log('deleted token', tokenValue2, JSON.stringify(await tokenValue1) === JSON.stringify(valueObj) === false);
 
 })()
 
